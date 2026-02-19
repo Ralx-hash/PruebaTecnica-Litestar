@@ -21,5 +21,6 @@ cors_config = CORSConfig(
 
 app = Litestar(
     route_handlers=route_handlers,
-    plugins = [sql_plugin],)
+    plugins = [sql_plugin],
+    cors_config=cors_config)
 

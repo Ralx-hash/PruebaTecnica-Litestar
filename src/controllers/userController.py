@@ -11,7 +11,7 @@ from src.database.models import Users
 from src.schemas import UsuarioCreate, UsuarioLogin
 from src.utils.hashearPassword import hash_password, verify_password
 from src.config import CONFIG
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 
 jwt_auth = JWTAuth[Users](
     token_secret=CONFIG.JWT_KEY,
@@ -112,16 +112,13 @@ class userController(Controller):
                 token_extras={"email": user.email}
             )
 
+            expiration_time = datetime.now(timezone.utc) + jwt_auth.default_token_expiration
+
             # Crear la respuesta completa con token y datos del usuario(cambiar esto)
             return {
                 "access_token": token,
                 "token_type": "bearer",
-                "user": {
-                    "id": user.id,
-                    "email": user.email,
-                    "nombre": user.nombre,
-                    "rol": user.rol
-                }
+                "expiration": expiration_time.isoformat(),
             }
 
         except Exception as e:
