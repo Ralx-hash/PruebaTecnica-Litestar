@@ -1,0 +1,130 @@
+from litestar import Controller, post, get, delete, put
+from litestar.params import Body
+from litestar.exceptions import HTTPException
+from sqlalchemy import select
+from litestar.di import Provide
+from litestar.security.jwt import JWTAuth, Token
+from src.database.dependencies import provide_user_repo
+from src.utils.retrieve_user_handler import retrieve_user_handler
+from src.database.repositories import UserRepository
+from src.database.models import Users
+from src.schemas import UsuarioCreate, UsuarioLogin
+from src.utils.hashearPassword import hash_password, verify_password
+from src.config import CONFIG
+from datetime import timedelta
+
+jwt_auth = JWTAuth[Users](
+    token_secret=CONFIG.JWT_KEY,
+    algorithm=CONFIG.JWT_ALGORITHM,
+    default_token_expiration=timedelta(hours=1),
+    retrieve_user_handler=retrieve_user_handler,
+    #esto es para poder entrar al login, register y a swagger sin la autentificacion JWT
+    #de todas formas esto es solo para cuando la autentificacion esta configurada para toda la app
+    #yo no lo estare haciendo asi, cada endpoint va a tener configurado el middleware de JWTAuth
+    #esto para hacer mas facil el debugging y para no complicar la configuracion de JWTAuth
+    exclude = ["/login", "/register", "/openapi.json", "/docs", "/redoc", "/schema"]
+)
+
+class userController(Controller):
+    path = "/users"
+    dependencies = {"user_repo": Provide(provide_user_repo)}
+
+    @get("/all-dict") #configurar esto para recibir middleware de JWTAuth
+    async def get_all_users_dict(self, user_repo: UserRepository) -> list[dict]:
+        try:
+            result = await user_repo.session.execute(select(Users))
+            users = result.scalars().all()
+            users_dict = [user.to_dict() for user in users]
+            return users_dict
+        except Exception as e:
+            print(f"Error en get_all_users_dict: {e}")
+            raise HTTPException(status_code=500, detail="Error interno del servidor al obtener usuarios")
+
+
+    @post("/agregar-masivo")
+    async def agregar_usuarios_masivo(self, data: list[dict], user_repo: UserRepository) -> dict:
+        try:
+            usuarios = data
+            usuarios_crear = []
+            campos_validos = {'nombre', 'rol', 'renta_mensual'}
+            
+            for usuario_data in usuarios:
+                # Filtrar solo los campos que existen en UsuarioCreate
+                datos_filtrados = {k: v for k, v in usuario_data.items() if k in campos_validos}
+                
+                # Generar email automáticamente basado en el nombre
+                if 'nombre' in datos_filtrados:
+                    nombre_sin_espacios = datos_filtrados['nombre'].replace(' ', '')
+                    datos_filtrados['email'] = f"{nombre_sin_espacios}@gmail.com"
+                    datos_filtrados['normalized_email'] = f"{nombre_sin_espacios.upper()}@gmail.com"
+                    datos_filtrados['hashed_password'] = hash_password(datos_filtrados['email'])
+
+                
+                print(f"Datos filtrados para usuario: {datos_filtrados}")
+                
+                # Validar que tenga los campos requeridos
+                if not all(campo in datos_filtrados for campo in campos_validos):
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Faltan campos requeridos en usuario: {usuario_data}. Requeridos: {campos_validos}"
+                    )
+                
+            #     # Crear el objeto UsuarioCreate
+                usuario_create = UsuarioCreate(**datos_filtrados)
+                usuarios_crear.append(usuario_create)
+            
+            # Hacer el insert masivo usando el repositorio
+            nuevos_usuarios = await user_repo.agregar_usuarios_masivo(usuarios_crear)
+            
+            return {
+                "mensaje": f"Se insertaron {len(nuevos_usuarios)} usuarios correctamente",
+                "total_insertados": len(nuevos_usuarios),
+                "usuarios_procesados": len(usuarios)
+            }
+            
+        except Exception as e:
+            print(f"Error en agregar_usuarios_masivo: {e}")
+            raise HTTPException(status_code=500, detail="Error interno del servidor al agregar usuarios")
+        
+    
+    @post("/login")  
+    async def login(
+        self, 
+        data: UsuarioLogin,
+        user_repo: UserRepository = Provide(provide_user_repo)
+    ) -> dict:
+        try:
+            stmt = await user_repo.session.execute(select(Users).where(Users.email == data.email))
+            user = stmt.scalars().first()
+
+            if not user:
+                raise HTTPException(status_code=401, detail="Email no encontrado")
+
+
+            validate_password = verify_password(data.password, user.hashed_password)
+
+            if not validate_password:
+                raise HTTPException(status_code=401, detail="Contraseña incorrecta")
+
+            # Generar el token JWT
+            token = jwt_auth.create_token(
+                identifier=str(user.id),
+                token_extras={"email": user.email}
+            )
+
+            # Crear la respuesta completa con token y datos del usuario(cambiar esto)
+            return {
+                "access_token": token,
+                "token_type": "bearer",
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "nombre": user.nombre,
+                    "rol": user.rol
+                }
+            }
+
+        except Exception as e:
+            print(f"Error en login: {e}")
+            raise
+
