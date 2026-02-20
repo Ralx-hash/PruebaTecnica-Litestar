@@ -24,5 +24,6 @@ class Users(BigIntBase):
             "id": self.id,
             "nombre": self.nombre,
             "rol": self.rol,
-            "renta_mensual": float(self.renta_mensual) if self.renta_mensual is not None else None
+            "renta_mensual": float(self.renta_mensual) if self.renta_mensual is not None else None,
+            "email": self.email
         }

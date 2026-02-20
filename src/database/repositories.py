@@ -34,3 +34,58 @@ class UserRepository(repository.SQLAlchemyAsyncRepository[Users]):
             # Rollback en caso de error
             await self.session.rollback()
             raise e
+
+
+        # Agregar a src/database/repositories.py
+    async def obtener_usuarios_por_roles(self, rolUsuario: str, userId: int) -> list[Users]:
+        # Obtener el rol del usuario que hace la petición
+        
+        if rolUsuario == "admin":
+            # Admin ve todos
+            result = await self.session.execute(select(Users))
+            return result.scalars().all()
+
+        elif rolUsuario == "supervisor":
+            # Supervisor ve usuarios y supervisores
+            result = await self.session.execute(
+                select(Users).where(Users.rol.in_(["usuario", "supervisor"]))
+            )
+            return result.scalars().all()
+
+        elif rolUsuario == "usuario":
+            # Usuario solo ve usuarios (incluyendo él mismo)
+            result = await self.session.execute(
+                select(Users).where(Users.id == userId)
+            )
+            return result.scalars().all()
+
+        return []
+
+
+    async def usuario_existe(self, email: str) -> bool:
+        result = await self.session.execute(select(Users).where(Users.email == email))
+        return result.scalars().first() is not None
+
+    # if requesting_user_role == "admin":
+    #     # Admin ve todos
+    #     result = await self.session.execute(select(Users))
+    #     return result.scalars().all()
+    
+    # elif requesting_user_role == "supervisor":
+    #     # Supervisor ve usuarios y supervisores
+    #     result = await self.session.execute(
+    #         select(Users).where(Users.rol.in_(["usuario", "supervisor"]))
+    #     )
+    #     return result.scalars().all()
+    
+    # elif requesting_user_role == "usuario":
+    #     # Usuario solo ve su propio perfil
+    #     if not requesting_user_id:
+    #         raise ValueError("Se requiere user_id para usuarios")
+    #     result = await self.session.execute(
+    #         select(Users).where(Users.id == requesting_user_id)
+    #     )
+    #     return [result.scalars().first()]
+    
+    # else:
+    #     raise ValueError(f"Rol no reconocido: {requesting_user_role}")

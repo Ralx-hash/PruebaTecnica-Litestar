@@ -1,6 +1,7 @@
-from litestar import Controller, post, get, delete, put
+from litestar import Controller, post, get, delete, put, Request
 from litestar.params import Body
 from litestar.exceptions import HTTPException
+from litestar.connection import ASGIConnection
 from sqlalchemy import select
 from litestar.di import Provide
 from litestar.security.jwt import JWTAuth, Token
@@ -41,6 +42,7 @@ class userController(Controller):
             raise HTTPException(status_code=500, detail="Error interno del servidor al obtener usuarios")
 
 
+    #agrega usuarios desde un array de objetos, sin ids
     @post("/agregar-masivo")
     async def agregar_usuarios_masivo(self, data: list[dict], user_repo: UserRepository) -> dict:
         try:
@@ -88,11 +90,7 @@ class userController(Controller):
         
     
     @post("/login")  
-    async def login(
-        self, 
-        data: UsuarioLogin,
-        user_repo: UserRepository = Provide(provide_user_repo)
-    ) -> dict:
+    async def login(self, data: UsuarioLogin, user_repo: UserRepository) -> dict:
         try:
             stmt = await user_repo.session.execute(select(Users).where(Users.email == data.email))
             user = stmt.scalars().first()
@@ -109,7 +107,7 @@ class userController(Controller):
             # Generar el token JWT
             token = jwt_auth.create_token(
                 identifier=str(user.id),
-                token_extras={"email": user.email}
+                token_extras={"email": user.email, "rol": user.rol}
             )
 
             expiration_time = datetime.now(timezone.utc) + jwt_auth.default_token_expiration
@@ -125,3 +123,45 @@ class userController(Controller):
             print(f"Error en login: {e}")
             raise
 
+
+
+    @get("/users-filtered", middleware=[jwt_auth.middleware])
+    async def obtener_usuarios_por_rol(self, user_repo: UserRepository, request: Request) -> dict:
+        try:
+            # Acceder al usuario a través del request scope
+            current_user = request.scope.get("user")
+            
+            if not current_user:
+                raise HTTPException(status_code=401, detail="Usuario no autenticado")
+            
+            user_rol = current_user.rol
+            user_id = current_user.id
+
+            if not await user_repo.usuario_existe(current_user.email):
+                raise HTTPException(status_code=401, detail="Usuario no encontrado")
+
+            lista_usuarios = await user_repo.obtener_usuarios_por_roles(user_rol, user_id)
+            
+            if lista_usuarios is None:
+                return []
+            
+            return [usuario.to_dict() for usuario in lista_usuarios]
+
+            
+        except Exception as e:
+            print(f"Error en obtener_usuarios_por_rol: {e}")
+            raise e
+
+    @get("/perfil", middleware=[jwt_auth.middleware])
+    async def obtener_perfil(self, request: Request) -> dict:
+        try:
+            current_user = request.scope.get("user")
+            
+            if not current_user:
+                raise HTTPException(status_code=401, detail="Usuario no autenticado")
+            
+            return current_user.to_dict()
+        
+        except Exception as e:
+            print(f"Error en obtener_perfil: {e}")
+            raise e
