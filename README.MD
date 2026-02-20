@@ -2,6 +2,8 @@
 <h2>Descripción</h2>
 <p>WEB API en Litestar con Front en Angular - Funcion principal de servir datos de usuarios con autenticacion mediante JWT
 </p>
+<p>Para iniciar el proyecto en local hay que instalar las librerias que se encuentrar en requeriments.txt y tener un .env que tenga DATABASE_URL = postgresql+asyncpg://...(credenciales), JWT_KEY y JWT_ALGORITHM. Luego usar el comando litestar run --reload en consola (con el entorno virtual de python abierto, en este caso venv/scripts/activate)
+</p>
 
 <h2>Funcionalidades principales</h2>
 La base de datos se trabajo en PostgreSQL, con una sola tabla con los siguientes atributos:
