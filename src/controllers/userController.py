@@ -19,10 +19,6 @@ jwt_auth = JWTAuth[Users](
     algorithm=CONFIG.JWT_ALGORITHM,
     default_token_expiration=timedelta(hours=1),
     retrieve_user_handler=retrieve_user_handler,
-    #esto es para poder entrar al login, register y a swagger sin la autentificacion JWT
-    #de todas formas esto es solo para cuando la autentificacion esta configurada para toda la app
-    #yo no lo estare haciendo asi, cada endpoint va a tener configurado el middleware de JWTAuth
-    #esto para hacer mas facil el debugging y para no complicar la configuracion de JWTAuth
     exclude = ["/login", "/register", "/openapi.json", "/docs", "/redoc", "/schema"]
 )
 

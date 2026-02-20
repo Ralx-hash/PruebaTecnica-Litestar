@@ -8,7 +8,7 @@ class Users(BigIntBase):
     #mapeo las columnas a su simil de postgresql
     nombre: Mapped[str] = mapped_column(VARCHAR(255), nullable=False)
     rol: Mapped[str] = mapped_column(VARCHAR(50))
-    renta_mensual: Mapped[float] = mapped_column(NUMERIC(12, 2))
+    renta_mensual: Mapped[float] = mapped_column(NUMERIC(12, 2), default=0.00)
     email: Mapped[str] = mapped_column(VARCHAR(255))
     normalized_email: Mapped[str] = mapped_column(VARCHAR(255))
     hashed_password: Mapped[str] = mapped_column(VARCHAR(255))

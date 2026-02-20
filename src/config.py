@@ -8,7 +8,7 @@ class settings(BaseSettings):
     JWT_ALGORITHM: str = Field(..., env = "JWT_ALGORITHM", description = "Algoritmo JWT")
 
     model_config = SettingsConfigDict(
-        env_file=".env", # "Busca el archivo .env"
+        env_file=".env", # Busca el archivo .env
         env_file_encoding="utf-8", 
     )
 

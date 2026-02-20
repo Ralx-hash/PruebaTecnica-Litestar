@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from pydantic import BaseModel
+from dataclasses import dataclass
+from pydantic import BaseModel, Field
 
 #DTO'S
 
@@ -11,7 +11,6 @@ class UsuarioBase:
     renta_mensual: float
 
 
-#esto va a ser para ingresar el json que tengo
 @dataclass
 class UsuarioCreate:
     nombre: str
@@ -21,6 +20,7 @@ class UsuarioCreate:
     normalized_email: str
     hashed_password: str
 
+#dataclass me estaba dando problemas para ingresarlo datos en el body
 class UsuarioLogin(BaseModel):
-    email: str
+    email: str = Field(..., pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$', description="Email del usuario") 
     password: str
