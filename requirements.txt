@@ -1,7 +1,7 @@
 # Dependencias principales del proyecto
 
 # Framework web
-itestar[standard]>=2.12.1
+litestar[standard]>=2.12.1
 python-dotenv>=1.2.1
 
 # Base de datos y ORM
