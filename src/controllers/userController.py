@@ -26,7 +26,7 @@ class userController(Controller):
     path = "/users"
     dependencies = {"user_repo": Provide(provide_user_repo)}
 
-    @get("/all-dict") #configurar esto para recibir middleware de JWTAuth
+    @get("/all-dict", middleware=[jwt_auth.middleware], cache = 3600) #configurar esto para recibir middleware de JWTAuth
     async def get_all_users_dict(self, user_repo: UserRepository) -> list[dict]:
         try:
             result = await user_repo.session.execute(select(Users))
@@ -39,7 +39,7 @@ class userController(Controller):
 
 
     #agrega usuarios desde un array de objetos, sin ids
-    @post("/agregar-masivo")
+    @post("/agregar-masivo", middleware=[jwt_auth.middleware])
     async def agregar_usuarios_masivo(self, data: list[dict], user_repo: UserRepository) -> dict:
         try:
             usuarios = data
@@ -121,7 +121,7 @@ class userController(Controller):
 
 
 
-    @get("/users-filtered", middleware=[jwt_auth.middleware])
+    @get("/users-filtered", middleware=[jwt_auth.middleware], cache = 3600)
     async def obtener_usuarios_por_rol(self, user_repo: UserRepository, request: Request) -> dict:
         try:
             # Acceder al usuario a través del request scope

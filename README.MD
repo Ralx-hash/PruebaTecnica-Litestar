@@ -51,3 +51,14 @@ JWTAuth tambien cuenta con exclude, para excluir rutas que no deben ser alterada
 
 <h3>hashing de contraseña</h3>
 <p>Se llevo a cabo a travez de bcrypt en una 2 funcion, una para hashear (que recibe la contraseña) y otra para deshashear (recibe la contraseña y la contraseña hasheada de la bd). Si bien la opcion para hashear no se utilizo mucho ya que no hay register en si, se utilizo para registrar en masa a todos los usuarios del json por medio del correo generado a partir de sus nombres</p>
+
+
+<h3>Tests</h3>   
+<p>El proyecto cuenta con un solo test que prueba la funcionalidad del hashing de contraseñas. La forma para probar los tests es:</p>   
+
+```bash
+pytest "directorio de las pruebas, en este caso:" 
+pytest tests/unit/utils/test_hashearPassword.py
+```
+<h3>Cache</h3> 
+<p>Se uso el cache (de una hora) integrado de litestar para las consultas de listas</p>
