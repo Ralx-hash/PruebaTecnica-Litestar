@@ -121,7 +121,7 @@ class userController(Controller):
 
 
 
-    @get("/users-filtered", middleware=[jwt_auth.middleware], cache = 3600)
+    @get("/users-filtered", middleware=[jwt_auth.middleware])
     async def obtener_usuarios_por_rol(self, user_repo: UserRepository, request: Request) -> dict:
         try:
             # Acceder al usuario a través del request scope
