@@ -54,11 +54,9 @@ JWTAuth tambien cuenta con exclude, para excluir rutas que no deben ser alterada
 
 
 <h3>Tests</h3>   
-<p>El proyecto cuenta con un solo test que prueba la funcionalidad del hashing de contraseñas. La forma para probar los tests es:</p>   
+<p>El proyecto cuenta con un dos tests que prueba la funcionalidad del hashing de contraseñas y el caso de que se ingrese un correo inexistente en el login. La forma para probar los tests es:</p>   
 
 ```bash
 pytest "directorio de las pruebas, en este caso:" 
 pytest tests/unit/utils/test_hashearPassword.py
 ```
-<h3>Cache</h3> 
-<p>Se uso el cache (de una hora) integrado de litestar para las consultas de listas</p>
